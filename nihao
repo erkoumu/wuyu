@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>决策树分类规则学习平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.2rem;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .tab-btn {
+            background: none;
+            border: 2px solid #667eea;
+            padding: 12px 20px;
+            margin: 5px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .content-area {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            min-height: 500px;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .algorithm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+        
+        .algorithm-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .algorithm-card h4 {
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+        }
+        
+        .algorithm-card ul {
+            list-style: none;
+        }
+        
+        .algorithm-card li {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .algorithm-card li:before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #1abc9c;
+            font-weight: bold;
+        }
+        
+        .math-formula {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 12px 0;
+            border-left: 4px solid #e74c3c;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .feature-list {
+            list-style: none;
+        }
+        
+        .feature-list li {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .feature-list li:before {
+            content: '▶';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .comparison-table th {
+            background: #34495e;
+            color: white;
+        }
+        
+        .comparison-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .tab-btn {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .algorithm-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌳 决策树分类规则学习平台</h1>
+            <p>探索各种决策树算法的原理、应用和实现</p>
+        </div>
+        
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="showTab('home')">首页</button>
+            <button class="tab-btn" onclick="showTab('basics')">基础知识</button>
+            <button class="tab-btn" onclick="showTab('id3')">ID3算法</button>
+            <button class="tab-btn" onclick="showTab('c45')">C4.5算法</button>
+            <button class="tab-btn" onclick="showTab('cart')">CART算法</button>
+            <button class="tab-btn" onclick="showTab('compare')">算法比较</button>
+        </div>
+        
+        <div class="content-area">
+            <!-- 首页 -->
+            <div id="home" class="tab-content active">
+                <div class="card">
+                    <h3>🎯 平台介绍</h3>
+                    <p>欢迎来到决策树分类规则学习平台！本平台提供全面的决策树算法学习资源，帮助您深入理解决策树的工作原理和实际应用。</p>
+                    <p><strong>部署方式：</strong>通过GitHub Pages部署，可在任何设备上访问</p>
+                </div>
+                
+                <div class="algorithm-grid">
+                    <div class="algorithm-card">
+                        <h4>ID3算法</h4>
+                        <p>基于信息增益的经典算法</p>
+                        <ul>
+                            <li>信息增益最大化</li>
+                            <li>自顶向下贪婪搜索</li>
+                            <li>处理分类属性</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="algorithm-card">
+                        <h4>C4.5算法</h4>
+                        <p>ID3的改进版本</p>
+                        <ul>
+                            <li>信息增益率</li>
+                            <li>连续属性处理</li>
+                            <li>缺失值处理</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="algorithm-card">
+                        <h4>CART算法</h4>
+                        <p>分类与回归树</p>
+                        <ul>
+                            <li>二叉树结构</li>
+                            <li>基尼不纯度</li>
+                            <li>回归树支持</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>🚀 访问方式</h3>
+                    <p>这个平台部署在GitHub Pages上，可以通过以下方式访问：</p>
+                    <ul class="feature-list">
+                        <li><b>电脑</b>: 直接在浏览器中打开网址</li>
+                        <li><b>手机/平板</b>: 在任何有网络的地方访问</li>
+                        <li><b>永久链接</b>: 网址不会过期，随时可用</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 基础知识 -->
+            <div id="basics" class="tab-content">
+                <div class="card">
+                    <h3>📚 决策树基础概念</h3>
+                    <p>决策树是一种树形结构，用于分类和回归任务。它模拟人类决策过程，通过一系列判断规则对数据进行分类。</p>
+                    
+                    <h4>决策树结构：</h4>
+                    <ul class="feature-list">
+                        <li><b>根节点</b>：决策树的起点，包含所有样本</li>
+                        <li><b>内部节点</b>：表示特征测试，根据特征值划分数据</li>
+                        <li><b>分支</b>：表示决策规则，对应特征的某个取值</li>
+                        <li><b>叶节点</b>：最终的分类结果或预测值</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>📈 核心度量指标</h3>
+                    
+                    <div class="math-formula">
+                        <h4>信息熵 (Entropy)</h4>
+                        <p>Entropy(S) = -∑ pᵢ log₂ pᵢ</p>
+                        <p>衡量数据集的不确定性，值越大表示数据越混乱</p>
+                    </div>
+                    
+                    <div class="math-formula">
+                        <h4>信息增益 (Information Gain)</h4>
+                        <p>Gain(S, A) = Entropy(S) - ∑ (|Sᵥ|/|S|) Entropy(Sᵥ)</p>
+                        <p>表示使用特征A划分数据集所获得的信息量</p>
+                    </div>
+                    
+                    <div class="math-formula">
+                        <h4>基尼指数 (Gini Index)</h4>
+                        <p>Gini(S) = 1 - ∑ pᵢ²</p>
+                        <p>衡量数据的不纯度，值越小表示数据越纯</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ID3算法 -->
+            <div id="id3" class="tab-content">
+                <div class="card">
+                    <h3>🔍 ID3算法详解</h3>
+                    <p>ID3（Iterative Dichotomiser 3）算法是决策树学习中最经典的算法之一，由Ross Quinlan提出。</p>
+                </div>
+                
+                <div class="card">
+                    <h3>⚡ 算法核心思想</h3>
+                    <ul class="feature-list">
+                        <li><b>信息增益最大化</b>：选择能够带来最大信息增益的特征作为划分标准</li>
+                        <li><b>自顶向下贪婪搜索</b>：从根节点开始，递归地选择最佳划分特征</li>
+                        <li><b>递归划分</b>：对每个分支重复上述过程，直到满足终止条件</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>📋 算法步骤</h3>
+                    <ol style="padding-left: 25px;">
+                        <li style="margin: 8px 0;">计算根节点的信息熵</li>
+                        <li style="margin: 8px 0;">对每个特征计算信息增益</li>
+                        <li style="margin: 8px 0;">选择信息增益最大的特征作为划分特征</li>
+                        <li style="margin: 8px 0;">根据特征取值创建分支</li>
+                        <li style="margin: 8px 0;">对每个分支递归应用上述过程</li>
+                        <li style="margin: 8px 0;">当满足终止条件时停止</li>
+                    </ol>
+                </div>
+                
+                <div class="card">
+                    <h3>⚠️ 算法局限性</h3>
+                    <ul class="feature-list">
+                        <li>无法处理连续特征</li>
+                        <li>对多值特征有偏好</li>
+                        <li>没有剪枝机制，容易过拟合</li>
+                        <li>缺失值处理困难</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- C4.5算法 -->
+            <div id="c45" class="tab-content">
+                <div class="card">
+                    <h3>🔧 C4.5算法改进</h3>
+                    <p>C4.5算法是ID3的重要改进版本，由Ross Quinlan提出。它使用信息增益率作为特征选择标准，解决了ID3算法的多个局限性。</p>
+                </div>
+                
+                <div class="card">
+                    <h3>✨ 主要改进特性</h3>
+                    <ul class="feature-list">
+                        <li><b>信息增益率</b>：使用信息增益率替代信息增益，解决多值特征偏好问题</li>
+                        <li><b>连续特征处理</b>：能够直接处理连续型特征</li>
+                        <li><b>缺失值处理</b>：内置缺失值处理机制</li>
+                        <li><b>剪枝技术</b>：防止过拟合，提高泛化能力</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>📊 信息增益率</h3>
+                    <div class="math-formula">
+                        <p>GainRatio(S, A) = Gain(S, A) / SplitInfo(S, A)</p>
+                        <p>其中SplitInfo(S, A) = -∑ (|Sᵥ|/|S|) log₂(|Sᵥ|/|S|)</p>
+                    </div>
+                    <p>信息增益率平衡了信息增益和特征取值数量，解决了ID3对多值特征的偏好问题。</p>
+                </div>
+            </div>
+            
+            <!-- CART算法 -->
+            <div id="cart" class="tab-content">
+                <div class="card">
+                    <h3>🌲 CART算法特点</h3>
+                    <p>CART（Classification and Regression Trees）算法由Leo Breiman等人提出，使用基尼指数作为特征选择标准。</p>
+                </div>
+                
+                <div class="card">
+                    <h3>🎯 算法特性</h3>
+                    <ul class="feature-list">
+                        <li><b>二叉树结构</b>：每个内部节点只有两个分支</li>
+                        <li><b>基尼指数</b>：使用基尼指数作为划分标准</li>
+                        <li><b>分类与回归</b>：支持分类树和回归树</li>
+                        <li><b>成本复杂性剪枝</b>：有效的剪枝策略</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <h3>📐 基尼指数</h3>
+                    <div class="math-formula">
+                        <p>Gini(S) = 1 - ∑ pᵢ²</p>
+                    </div>
+                    <p>基尼指数衡量数据的不纯度，值越小表示数据越纯。CART算法选择能够最小化基尼指数的特征进行划分。</p>
+                </div>
+            </div>
+            
+            <!-- 算法比较 -->
+            <div id="compare" class="tab-content">
+                <div class="card">
+                    <h3>📊 算法对比分析</h3>
+                </div>
+                
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>特性</th>
+                            <th>ID3</th>
+                            <th>C4.5</th>
+                            <th>CART</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>划分标准</td>
+                            <td>信息增益</td>
+                            <td>信息增益率</td>
+                            <td>基尼指数</td>
+                        </tr>
+                        <tr>
+                            <td>树结构</td>
+                            <td>多叉树</td>
+                            <td>多叉树</td>
+                            <td>二叉树</td>
+                        </tr>
+                        <tr>
+                            <td>连续特征</td>
+                            <td>不支持</td>
+                            <td>支持</td>
+                            <td>支持</td>
+                        </tr>
+                        <tr>
+                            <td>缺失值处理</td>
+                            <td>不支持</td>
+                            <td>支持</td>
+                            <td>支持</td>
+                        </tr>
+                        <tr>
+                            <td>剪枝技术</td>
+                            <td>无</td>
+                            <td>悲观错误剪枝</td>
+                            <td>成本复杂性剪枝</td>
+                        </tr>
+                        <tr>
+                            <td>适用场景</td>
+                            <td>小数据集</td>
+                            <td>通用场景</td>
+                            <td>分类回归</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="card">
+                    <h3>🎯 选择指南</h3>
+                    <ul class="feature-list">
+                        <li><b>选择ID3</b>：小数据集、离散特征、简单应用</li>
+                        <li><b>选择C4.5</b>：包含连续特征、有缺失值、需要防过拟合</li>
+                        <li><b>选择CART</b>：需要二叉树结构、回归问题、特征重要性分析</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>决策树分类规则学习平台 | 部署于GitHub Pages | 设计用于教育目的</p>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            // 隐藏所有标签内容
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(tab => tab.classList.remove('active'));
+            
+            // 移除所有按钮的active类
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // 显示选中的标签内容
+            document.getElementById(tabId).classList.add('active');
+            
+            // 为当前按钮添加active类
+            event.currentTarget.classList.add('active');
+        }
+        
+        // 默认显示首页
+        document.addEventListener('DOMContentLoaded', function() {
+            showTab('home');
+        });
+    </script>
+</body>
+</html>
